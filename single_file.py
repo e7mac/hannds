@@ -17,7 +17,7 @@ class SingleFileAnnotate(object):
         right_hand = mido.MidiTrack()
         bpm = 120 #default
 
-        new_mid = mido.MidiFile()
+        new_mid = mido.MidiFile(ticks_per_beat=mid.ticks_per_beat)
         left_hand_is_playing = {0}
 
         total_sec = 0
@@ -26,7 +26,8 @@ class SingleFileAnnotate(object):
             for msg in track:
                 sec = mido.tick2second(msg.time, mid.ticks_per_beat, mido.bpm2tempo(bpm))
                 total_sec = total_sec + sec
-                total_ticks = total_ticks + msg.time
+                # total_ticks = total_ticks + msg.time
+                total_ticks += msg.time
                 if msg.type == "note_off" or (msg.type == "note_on" and msg.velocity==0):
                     event = kalman_mapper.MidiEvent(msg.note, is_note_on=False, when=total_sec, is_left=None)
                     mapper.midi_event(event)
@@ -49,10 +50,14 @@ class SingleFileAnnotate(object):
                     left_hand.append(msg.copy(time=total_ticks))
                     right_hand.append(msg.copy(time=total_ticks))
 
+
+
         new_mid.tracks.append(mido.midifiles.tracks._to_reltime(right_hand))
         new_mid.tracks.append(mido.midifiles.tracks._to_reltime(left_hand))
 
         new_mid.save(filename.replace(".mid", "-split.mid"))
+
+
 
 def main():
     parser = argparse.ArgumentParser()
